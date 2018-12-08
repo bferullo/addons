@@ -43,7 +43,8 @@ local minimap_size =
 	},
 	outdoor =
 	{
-		[0] = 466 + 2/3, -- scale
+		--[0] = 466 + 2/3, -- scale
+		[0] = 466 + 2/3,
 		[1] = 400,       -- 7/6
 		[2] = 333 + 1/3, -- 1.4
 		[3] = 266 + 2/6, -- 1.75
@@ -64,7 +65,7 @@ local minimap_scale =
 	},
 	outdoor =
 	{
-		[0] = 1,
+				[0] = 1,
 		[1] = 7/6,
 		[2] = 1.4,
 		[3] = 1.75,
@@ -1097,19 +1098,52 @@ function addon:UpdateConsPositions(player_x, player_y, player_a)
 	local cos, sin = math.cos(player_a), math.sin(player_a)
 	
 	for _,item in ipairs(addon.ConsArray) do
-		--print(item.x .. "   " .. player_x)
-		--print(item.y .. "   " .. player_y)
 		local dx, dy = item.x - player_x, item.y - player_y
+		
 		local x = dx*cos - dy*sin
 		local y = dx*sin + dy*cos
 		local rot = item.a-player_a
-	
+		
 		--item.texture:ClearAllPoints()
 		-- 4000 = too fast
-		item.texture:SetPoint("CENTER", Arh_HudFrame, "CENTER", x*PixelsInYardOnHud, -y*PixelsInYardOnHud)
-		--item.texture:SetPoint("CENTER", Arh_HudFrame, "CENTER", -25, -75)
+		-- 3500 is okay
+		
+		-- PLAYER X,Y ORIGIN:
+		--	local x, y = C_Map.GetPlayerMapPosition(map, "player"):GetXY()
+		--local map = C_Map.GetBestMapForUnit('player')
+		--print(C_Map.GetPlayerMapPosition(C_Map.GetBestMapForUnit("player"), "player"):GetXY())
+		--print("PIP: " .. PixelsInYardOnHud)
+		--print("P_X: " .. player_x)
+		--print("P_Y: " .. player_y)
+		--print("dx: " .. round(dx, 4))
+		--print("dy: " .. round(dy, 4))
+		--print("X: " .. x)
+		--print("Y: " .. y)
+		--print("PiY: " .. PixelsInYardOnHud)
+		--item.texture:SetPoint("CENTER", Arh_HudFrame, "CENTER", x * PixelsInYardOnHud * 1080, y * PixelsInYardOnHud * 1080)
+		local new_x = x * PixelsInYardOnHud * -85--* 7100 --9000
+		local new_y = y * PixelsInYardOnHud * 85--* 7100 --5500
+		
+		--print("PA: " .. player_a)
+		--print("SPA: " .. math.sin(player_a))
+		--print("CPA: " .. math.cos(player_a))
+		
+		print("MAP_X: " .. new_x)
+		print("MAP_Y: " .. new_y)
+		
+		-- COME HERE
+		
+		-- Moving directly south: -y * 5500 ~~ Pretty good
+		-- Move from mark to top-center of green = (about) -90
+		item.texture:SetPoint("CENTER", Arh_HudFrame, "CENTER", new_x, new_y)
+		--item.texture:SetPoint("CENTER", Arh_HudFrame, "CENTER", 47.5, -121.6)
 		RotateTexture(item, rot)
 	end
+end
+
+function round(num, numDecimalPlaces)
+  local mult = 10^(numDecimalPlaces or 0)
+  return math.floor(num * mult + 0.5) / mult
 end
 
 function addon:UpdateAlpha(texture, color, isline)
@@ -1141,8 +1175,52 @@ function addon:UpdateCons(player_x, player_y, player_a)
 	addon:UpdateConsPositions(player_x, player_y, player_a)
 end
 
+function tablelength(T)
+	local count = 0
+	for _ in pairs(T) do count = count + 1 end
+	return count
+end
+
+function getDigSites()
+	-- Valid options:
+	--	researchSiteID = number
+	-- 	position = table (Vector2DMixin)
+	--	name = string
+	--	textureIndex = number
+	digsite = C_ResearchInfo.GetDigSitesForMap(C_Map.GetBestMapForUnit('player'))
+	
+	for key, value in next, digsite do
+		for k, v in next, value do
+			-- Example:
+			--	if k == "name" then print(key .. " - " .. v) end
+			if k == "name" then print(key .. " - " .. v) end
+		end
+	end
+end
+
 local _lastmapid, _lastmaptext
 function addon:GetPos()
+
+	
+	--getDigSites()
+	
+	--for key, value in next, digsiteinfo do
+	--	for k, v in next, value do
+	--		if k == "hitRect" then
+	--			for r, t in next, v do
+	--				if r == "bottom" then bottom = t end
+	--				if r == "top" then top = t end
+	--				if r == "left" then left = t end
+	--				if r == "right" then right = t end
+	--			end
+	--		end
+	--	end
+	--end
+	
+--				{ Name = "researchSiteID", Type = "number", Nilable = false },
+--				{ Name = "position", Type = "table", Mixin = "Vector2DMixin", Nilable = false },
+--				{ Name = "name", Type = "string", Nilable = false },
+--				{ Name = "textureIndex", Type = "number", Nilable = false },
   --local oldcont = GetCurrentMapContinent()
   --local oldmap = GetCurrentMapAreaID()
   --local oldlvl = GetCurrentMapDungeonLevel()
@@ -1164,15 +1242,15 @@ function addon:GetPos()
     end
     --SetMapToCurrentZone()
     --map = GetCurrentMapAreaID()
-    local map = C_Map.GetBestMapForUnit('player')
+	local map = C_Map.GetBestMapForUnit('player')
     --level = GetCurrentMapDungeonLevel();
-    level = 0
+	level = 0
     --print("SetMapToCurrentZone: "..oldmap.."->"..map)
     _lastmapid = map
     _lastmaptext = text
   end
-  
-  local x, y = C_Map.GetPlayerMapPosition(map, "player"):GetXY()  
+  -- /run print(C_Map.GetPlayerMapPosition(C_Map.GetBestMapForUnit("player"), "player"):GetXY())
+  local x, y = C_Map.GetPlayerMapPosition(map, "player"):GetXY()
   
   if flicker then
     WorldMapFrame:Show()
@@ -1192,29 +1270,37 @@ function addon:GetPosYards()
   local x,y,map,level = addon:GetPos()
   
   if x and y and map and x + y > 0 then
+	--print(x .. ", " .. y)
     --local id, _, _, left, right, top, bottom = GetAreaMapInfo(map)
-	--[[local hitrect = C_MapExplorationInfo.GetExploredMapTextures(map)
 	local top, bottom, left, right
+	local hitrect = C_MapExplorationInfo.GetExploredMapTextures(map)
+	--[[ 	hitRect			offsetX		textureHeight	textureWidth 
+			offsetY		fileDataIDs		isShownByMouseOver				-- ]]
+	
 	for key, value in next, hitrect do
-		for k, v in next, value do
-			if k == "hitRect" then
-				for r, t in next, v do
-					if r == "bottom" then bottom = t end
-					if r == "top" then top = t end
-					if r == "left" then left = t end
-					if r == "right" then right = t end
-				end
-			end
-		end
-	end]]--
-  local vector00, vector05 = CreateVector2D(0, 0), CreateVector2D(0.5, 0.5)
-  local mapID = C_Map.GetBestMapForUnit('player');
-  local instance, topLeft = C_Map.GetWorldPosFromMapPos(mapID, vector00)
-  local _, bottomRight = C_Map.GetWorldPosFromMapPos(mapID, vector05)
-  local top, left = topLeft:GetXY()
-  local bottom, right = bottomRight:GetXY()
-  bottom = top + (bottom - top) * 2
-  right = left + (right - left) * 2
+		hr = value["hitRect"]
+		ox = value["offsetX"]
+		oy = value["offsetY"]
+		th = value["textureHeight"]
+		tw = value["textureWidth"]
+		id = value["fileDataIDs"]
+		mo = value["isShownByMouseOver"]
+	end
+	top = hr["top"]
+	bottom = hr["bottom"]
+	left = hr["left"]
+	right = hr["right"]
+	
+	if left and right and left < right then	-- Flipped
+	  print("FIPPING X")
+      x = x * (left - right)
+	  --x = x
+    end
+    if bottom and top and bottom > top then	-- Flipped
+	  print("FIPPING Y")
+      y = y * (top - bottom)
+	  --y = y
+    end
 	
 	--[[
     if left == right or top == bottom then 
@@ -1222,12 +1308,13 @@ function addon:GetPosYards()
       _, right, left, bottom, top = GetDungeonMapInfo(map)
     end
 	--]]
-    if left and right and left > right then
-      x = x * (left - right)
-    end
-    if bottom and top and bottom < top then
-      y = y * (top - bottom)
-    end
+	
+	print("T: " .. top)
+	print("B: " .. bottom)
+	print("L: " .. left)
+	print("R: " .. right)
+	--print(x .. ", " .. y)
+	
   end
   
   return x,y,map,level
@@ -1405,6 +1492,64 @@ local function OnHelp()
 end
 
 local function handler(msg, editbox)
+	-- BEGIN SLASHING
+	local map = C_Map.GetBestMapForUnit('player')
+	local x, y = C_Map.GetPlayerMapPosition(map, "player"):GetXY()
+	local hitrect = C_MapExplorationInfo.GetExploredMapTextures(map)
+	local top, bottom, left, right
+	
+	if hitrect then
+		for i, exploredTextureInfo in ipairs(hitrect) do
+			hr = exploredTextureInfo.hitRect
+		end
+	end
+	--print(bottom)
+	--print(top)
+	--print(left)
+	--print(right)
+	
+	local hitrect = C_MapExplorationInfo.GetExploredMapTextures(map)
+	--[[ 	hitRect			offsetX		textureHeight	textureWidth 
+			offsetY		fileDataIDs		isShownByMouseOver				-- ]]
+	
+	for key, value in next, hitrect do
+		hr = value["hitRect"]
+		ox = value["offsetX"]
+		oy = value["offsetY"]
+		th = value["textureHeight"]
+		tw = value["textureWidth"]
+		id = value["fileDataIDs"]
+		mo = value["isShownByMouseOver"]
+	end
+	
+	if hr then
+		top = hr["top"]
+		bottom = hr["bottom"]
+		left = hr["left"]
+		right = hr["right"]
+	end
+	
+	if left and right and left > right then
+      x = x * (left - right)
+    end
+    if bottom and top and bottom < top then
+      y = y * (top - bottom)
+    end
+	
+	print("X: " .. x)
+	print("Y: " .. y)
+	
+	print("B: " .. bottom)
+	print("T: " .. top)
+	print("L: " .. left)
+	print("R: " .. right)
+	--print("H: " .. th)
+	--print("W: " .. tw)
+	
+	
+	
+	
+	--[[
 	if msg=='' then
 		OnHelp()
 	elseif msg=='toggle' or msg=='t' then
@@ -1441,6 +1586,7 @@ local function handler(msg, editbox)
 		print("unknown command: "..msg)
 		print("use |cffffff78/arh|r for help on commands")
 	end
+	--]]
 end
 SlashCmdList["ARH"] = handler;
 SLASH_ARH1 = "/arh"
@@ -1621,7 +1767,12 @@ end
 
 function Arh_ArchaeologyDigSites_BattlefieldMinimap_OnUpdate(self, elapsed)
 	self:DrawNone()
-	local numEntries = ArchaeologyMapUpdateAll()
+	local mapId = C_Map.GetBestMapForUnit('player')
+	digsite, typetable, digsiteinfo = GetDigSitesForMap(mapId, 1)
+	print(mapId)
+	print(digsite)
+	print(digsiteinfo)
+	-- local numEntries = ArchaeologyMapUpdateAll()0
 	for i = 1, numEntries do
 		local blobID = ArcheologyGetVisibleBlobID(i)
 		self:DrawBlob(blobID, true)
